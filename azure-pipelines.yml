@@ -1,0 +1,44 @@
+name: $(major).$(minor).$(rev:r)
+
+trigger:
+- master
+
+jobs:
+- job: Build
+  pool:
+    vmImage: 'ubuntu-latest'
+
+  steps:
+  - checkout: self
+    persistCredentials: true
+    clean: true
+  - script: |
+      git config --global user.email you@you.com
+      git config --global user.name "your name"
+      git checkout master
+      npm version patch -m "Auto increment patch version to %s [***NO_CI***]" --force
+      git push
+    displayName: 'Bump version'
+  - script: |
+      PACKAGE_VERSION=$(node -p -e "require('./package.json').version")
+      echo $PACKAGE_VERSION
+      echo "##vso[build.updatebuildnumber]$PACKAGE_VERSION"
+    displayName: 'Set version'
+  - script: |
+      rm -f package-lock.json
+    displayName: 'Cleaning'
+  - task: Npm@1
+    inputs:
+      command: 'install'
+    displayName: 'NPM Install'
+  - task: WhiteSource Bolt@20
+  - script: tsc
+    displayName: 'Typescript compile'
+  - script: npm run lint
+    displayName: 'Run npm Linting'  
+  - task: Npm@1
+    inputs:
+      command: 'publish'
+      publishRegistry: 'useFeed'
+      publishFeed: '034cc059-9fab-4bad-a719-ae927430bde6/7c03afb6-eeb8-43dd-9192-97579cf9ef71'
+    displayName: 'Publish package'
