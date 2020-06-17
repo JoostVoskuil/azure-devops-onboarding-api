@@ -39,5 +39,5 @@ jobs:
   - task: Npm@1
     inputs:
       command: 'publish'
-      publishEndpoint: 'Publish package'
+      publishEndpoint: 'registry.npmjs.org'
     displayName: 'Publish npm package'
