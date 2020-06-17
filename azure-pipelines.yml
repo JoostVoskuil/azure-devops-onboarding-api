@@ -39,6 +39,4 @@ jobs:
   - task: Npm@1
     inputs:
       command: 'publish'
-      publishRegistry: 'useFeed'
-      publishFeed: '034cc059-9fab-4bad-a719-ae927430bde6/7c03afb6-eeb8-43dd-9192-97579cf9ef71'
     displayName: 'Publish package'
