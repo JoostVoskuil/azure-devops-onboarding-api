@@ -26,23 +26,33 @@ export class PolicyServices {
   public async applyOrReplaceGitPolicies(project: TeamProject): Promise<TeamProject> {
     const policyApi: pa.PolicyApi = await this.connection.getPolicyApi();
     const currentPolicies: PolicyConfiguration[] = await policyApi.getPolicyConfigurations(project.name!);
-    for (const currentPolicy of currentPolicies) {
-      await policyApi.deletePolicyConfiguration(project.name!, currentPolicy.id!);
-    }
 
     const policies: IPolicy[] = JSON.parse(fs.readFileSync('settings/' + this.azureDevOpsServices.configuration().CONFIG_GITPOLICYFILE, 'utf8'));
     for (const policy of policies) {
-      const policyConfiguration: PolicyConfiguration = {
-        isEnabled: true,
-        isBlocking: true,
-        isDeleted: false,
-        type: {
-          id: policy.type,
-        },
-        settings: policy.settings,
-      };
-      const result = await policyApi.createPolicyConfiguration(policyConfiguration, project.name!);
-      policyLogger.info("Policy set for project: '" + project.name + "' for type '" + policy.description + "'");
+      // @ts-ignore
+      const isThereAPolicy = currentPolicies.find((p) => p.type?.id === policy.type && p.settings.scope.every(s => s.repositoryId === null));
+      if (!isThereAPolicy) {
+        const policyConfiguration: PolicyConfiguration = {
+          isEnabled: true,
+          isBlocking: true,
+          isDeleted: false,
+          type: {
+            id: policy.type,
+          },
+          settings: policy.settings,
+        };
+        const result = await policyApi.createPolicyConfiguration(policyConfiguration, project.name!);
+        policyLogger.info("Policy set for project: '" + project.name + "' for type '" + policy.description + "'");
+      }
+      else {
+        isThereAPolicy.isBlocking = true;
+        isThereAPolicy.isEnabled = true;
+        isThereAPolicy.isDeleted = false;
+        isThereAPolicy.settings = policy.settings;
+        const result = await policyApi.updatePolicyConfiguration(isThereAPolicy, project.name!, isThereAPolicy.id!);
+        policyLogger.info("Policy updated for project: '" + project.name + "' for type '" + policy.description + "'");
+
+      }
     }
     return project;
   }
