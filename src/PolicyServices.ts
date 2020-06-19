@@ -30,7 +30,13 @@ export class PolicyServices {
     const policies: IPolicy[] = JSON.parse(fs.readFileSync('settings/' + this.azureDevOpsServices.configuration().CONFIG_GITPOLICYFILE, 'utf8'));
     for (const policy of policies) {
       // @ts-ignore
-      const isThereAPolicy = currentPolicies.find((p) => p.type?.id === policy.type && p.settings.scope.every(s => s.repositoryId === null));
+      let isThereAPolicy;
+      try {
+        isThereAPolicy = currentPolicies.find((p) => p.type?.id === policy.type && p.settings.scope.every(s => s.repositoryId === null));
+      }
+      catch { 
+        isThereAPolicy = undefined; 
+      }
       if (!isThereAPolicy) {
         const policyConfiguration: PolicyConfiguration = {
           isEnabled: true,
